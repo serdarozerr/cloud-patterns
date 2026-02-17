@@ -88,7 +88,7 @@ func (c *Consumer) Start(ctx context.Context)error{
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
-			c.work(ctx,workerID,msgChan)
+			c.work(ctx,msgChan)
 
 		}(i)
 	}
@@ -116,7 +116,6 @@ func (c *Consumer) work(ctx context.Context, msgChan <-chan *MessageConsumer){
 }
 
 func (c *Consumer) pool(ctx context.Context, msgChan chan<- *MessageConsumer){
-
 	for  {
 		select {
 			case <-ctx.Done():
@@ -124,7 +123,7 @@ func (c *Consumer) pool(ctx context.Context, msgChan chan<- *MessageConsumer){
 			default:
 				messages,err :=c.receiveMessages(ctx)
 				if err != nil{
-					slog.Info("Error receiving message","error",err)
+					slog.Error("receiving messages","error",err)
 					time.Sleep(time.Second)
 					continue
 				}
@@ -137,15 +136,23 @@ func (c *Consumer) pool(ctx context.Context, msgChan chan<- *MessageConsumer){
 					}
 				}
 		}
-
 	}
-
 }
-
-
 
 func (c *Consumer) processMessage(ctx context.Context, msg *MessageConsumer){
 
+	ctxT,cancel:=context.WithTimeout(ctx,time.Duration(time.Duration(c.visibilityTimeout-5)*time.Second))
+	defer cancel()
+
+	err:=c.handler(ctxT,msg)
+	 if err != nil {
+        slog.Info("Error processing message %s: %v", msg.ID, err)
+        return
+    }
+
+	 if err := c.deleteMessage(ctx, msg.ReceiptHandle); err != nil {
+        slog.Info("Error deleting message %s: %v", msg.ID, err)
+    }
 }
 
 
@@ -180,4 +187,19 @@ for i, m :=range res.Messages{
     messages[i] = &msg
 }
 return messages, nil
+}
+
+func (c *Consumer) deleteMessage(ctx context.Context, rh string )error{
+
+	in:=&sqs.DeleteMessageInput{
+		QueueUrl: &c.queueURL,
+		ReceiptHandle: &rh,
+	}
+
+	_,err:=c.client.DeleteMessage(ctx,in)
+
+	if err!=nil{
+		return fmt.Errorf("deleting message: %w",err)
+	}
+	return nil
 }
