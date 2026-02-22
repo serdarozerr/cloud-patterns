@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
@@ -202,4 +203,66 @@ func (c *Consumer) deleteMessage(ctx context.Context, rh string )error{
 		return fmt.Errorf("deleting message: %w",err)
 	}
 	return nil
+}
+
+//-----------------------------> Batch Delete
+
+type BatchDeleteError struct{
+	ID string
+	Code string
+	Message string
+}
+
+type BatchDeleteResult struct{
+	Successful []string
+	Failed []BatchDeleteError
+}
+
+func (c *Consumer) DeleteMessageBatch(ctx context.Context, messages []*MessageConsumer)(*BatchDeleteResult, error){
+
+	if len(messages) ==0{
+		return &BatchDeleteResult{}, nil
+	}
+	if len(messages) >10{
+		return nil, fmt.Errorf("batch size exceeds maximum of 10 messages")
+	}
+
+	entries := make([]types.DeleteMessageBatchRequestEntry, len(messages))
+	for i, m := range messages{
+		entries[i] = types.DeleteMessageBatchRequestEntry{
+			Id: aws.String(m.ID),
+			ReceiptHandle: aws.String(m.ReceiptHandle),
+		}
+	}
+
+	in:=&sqs.DeleteMessageBatchInput{
+		QueueUrl: aws.String(c.queueURL),
+		Entries: entries,
+	}
+	  
+	result, err := c.client.DeleteMessageBatch(ctx, in)
+    if err != nil {
+        return nil, fmt.Errorf("batch deleting messages: %w", err)
+    }
+
+	batchResult := &BatchDeleteResult{
+        Successful: make([]string, len(result.Successful)),
+        Failed:     make([]BatchDeleteError, len(result.Failed)),
+    }
+
+    for i, s := range result.Successful {
+        batchResult.Successful[i] = *s.Id
+    }
+
+    for i, f := range result.Failed {
+        batchResult.Failed[i] = BatchDeleteError{
+            ID:      *f.Id,
+            Code:    *f.Code,
+            Message: *f.Message,
+        }
+    }
+
+    return batchResult, nil
+
+
 }

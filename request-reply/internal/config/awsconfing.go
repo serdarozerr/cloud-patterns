@@ -10,9 +10,9 @@ type AWSConfig struct {
 	AccessKeyID     string `json:"access_key_id"`
 	SecretAccessKey string `json:"secret_access_key"`
 	Region          string `json:"region"`
-
+	Name			string `json:"queue_name"`
 	// Optional SQS endpoint for local testing (e.g., LocalStack)
-	Endpoint string `json:"endpoint"`
+	QueueURL string `json:"queue_url"`
 }
 
 func NewAwsConfig(filePath string) *AWSConfig {
@@ -37,6 +37,12 @@ func NewAwsConfig(filePath string) *AWSConfig {
 		panic("AWS config is missing required fields")
 	}
 
+	if config.Name =="" && config.QueueURL==""{
+		slog.Error("Both queue name and queue url fields are emtpy, provide one at least")
+		panic("Both queue name and queue url fields are emtpy, provide one at least")
+	}
+
 	return &config
 
 }
+

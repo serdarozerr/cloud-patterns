@@ -7,7 +7,7 @@
 *.dll
 *.so
 *.dylib
-
+*.json
 .DS_Store
 
 # Test binary, built with `go test -c`

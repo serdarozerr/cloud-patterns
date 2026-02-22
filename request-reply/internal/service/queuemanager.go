@@ -19,7 +19,7 @@ func NewQueuManager(client *sqs.Client) *QueueManager {
 	return &QueueManager{client: client}
 }
 
-func (qm *QueueManager) CrateStandartQueue(ctx *context.Context, name string, visibilityTimeout int, messageRetantion int) (string, error) {
+func (qm *QueueManager) CrateStandartQueue(ctx context.Context, name string, visibilityTimeout int, messageRetantion int) (string, error) {
 
 	in := &sqs.CreateQueueInput{
 		QueueName: aws.String(name), 
@@ -28,7 +28,7 @@ func (qm *QueueManager) CrateStandartQueue(ctx *context.Context, name string, vi
 			"MessageRetationPeriot": strconv.Itoa(messageRetantion), 
 			"ReceiveMessageWaitTimeSeconds": "20"}}
 
-	out,err:=qm.client.CreateQueue(*ctx,in)
+	out,err:=qm.client.CreateQueue(ctx,in)
 	if err != nil{
 		return "", fmt.Errorf("creating standart queue %w",err)
 	}
@@ -38,7 +38,7 @@ func (qm *QueueManager) CrateStandartQueue(ctx *context.Context, name string, vi
 }
 
 
-func (qm *QueueManager) CreateFIFOQueue(ctx *context.Context, name string, visibiltyTimeout int, contentBasedDedup bool)(string, error){
+func (qm *QueueManager) CreateFIFOQueue(ctx context.Context, name string, visibiltyTimeout int, contentBasedDedup bool)(string, error){
 
 	name=fmt.Sprintf("%s.fifo",name)
 
@@ -57,7 +57,7 @@ func (qm *QueueManager) CreateFIFOQueue(ctx *context.Context, name string, visib
 		QueueName: aws.String(name),
 		Attributes: attr,}
 
-	out,err:=qm.client.CreateQueue(*ctx,in)
+	out,err:=qm.client.CreateQueue(ctx,in)
 	if err != nil{
 		return "", fmt.Errorf("creating standart queue %w",err)
 	}
