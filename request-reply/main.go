@@ -32,7 +32,7 @@ func getSqsClient(awsCfg *config.AWSConfig) *sqs.Client{
 	}
 	return client
 }
-func getQueueURL(ctx context.Context, client *sqs.Client,awsCfg *config.AWSConfig) string{
+func getQueueURL(ctx context.Context, client *sqs.Client, awsCfg *config.AWSConfig) string{
 
 	// create queue manager
 	queueMgr:=service.NewQueuManager(client)
@@ -56,6 +56,7 @@ func getQueueURL(ctx context.Context, client *sqs.Client,awsCfg *config.AWSConfi
 func getProducerQueue(ctx context.Context,awsCfg *config.AWSConfig) *service.Producer{
 	client:=getSqsClient(awsCfg)
 	queueUrl:=getQueueURL(ctx,client,awsCfg)
+	awsCfg.QueueURL=queueUrl
 	prod:=service.NewProducer(client,queueUrl)
 	return prod
 }
@@ -88,7 +89,7 @@ func messageHandler(ctx context.Context, msg *service.MessageConsumer)error{
 	}
 }
 
-func getConsumerQueue(ctx context.Context,awsCfg *config.AWSConfig) *service.Consumer{
+func getConsumerQueue(ctx context.Context, awsCfg *config.AWSConfig) *service.Consumer{
 	client:=getSqsClient(awsCfg)
 	queueUrl:=getQueueURL(ctx, client, awsCfg)
 	cons:=service.NewConsumer(client,
@@ -128,15 +129,6 @@ func startConsumerWorker(){
 
 func main() {
 	configureLogger()
-
-
-
-
-	setUpProducerQueue()
-
-
-
-
 	
 
 }

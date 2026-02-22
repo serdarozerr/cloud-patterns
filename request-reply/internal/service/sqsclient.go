@@ -23,14 +23,14 @@ func NewSQSClient(ctx context.Context, cfg *config.AWSConfig) (*sqs.Client, erro
 	}
 
 	var sqsOpts []func(*sqs.Options)
-	if cfg.Endpoint != "" {
+	if cfg.QueueURL != "" {
 		// Validate endpoint format
-		if _, err := url.Parse(cfg.Endpoint); err != nil {
-			return nil, fmt.Errorf("invalid SQS endpoint URL: %w", err)
+		if _, err := url.Parse(cfg.QueueURL); err != nil {
+			return nil, fmt.Errorf("invalid SQS URL: %w", err)
 		}
 
 		sqsOpts = append(sqsOpts, func(o *sqs.Options) {
-			o.BaseEndpoint = &cfg.Endpoint
+			o.BaseEndpoint = &cfg.QueueURL
 		})
 	}
 
