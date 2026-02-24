@@ -13,7 +13,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/serdarozerr/request-reply/internal/api"
 	"github.com/serdarozerr/request-reply/internal/config"
-	"github.com/serdarozerr/request-reply/internal/service"
+	"github.com/serdarozerr/request-reply/internal/service/queue"
+	"github.com/serdarozerr/request-reply/internal/service/queue/handlers"
 )
 
 func configureLogger() {
@@ -27,7 +28,7 @@ func getSqsClient(awsCfg *config.AWSConfig) *sqs.Client{
 	ctx:=context.Context(context.Background())
 
 	// create queue client
-	client,err:=service.NewSQSClient(ctx,awsCfg)
+	client,err:=queue.NewSQSClient(ctx,awsCfg)
 	if err !=nil{
 		slog.Error("Failed to create queue client","error",err)
 		panic(1)
@@ -35,7 +36,7 @@ func getSqsClient(awsCfg *config.AWSConfig) *sqs.Client{
 	return client
 }
 func getQueueURL(ctx context.Context, client *sqs.Client, awsCfg *config.AWSConfig) string{
-	queueMgr:=service.NewQueuManager(client)
+	queueMgr:=queue.NewQueuManager(client)
 
 	queueUrl:=awsCfg.QueueURL
 	var err error
@@ -53,54 +54,29 @@ func getQueueURL(ctx context.Context, client *sqs.Client, awsCfg *config.AWSConf
 	return queueUrl
 }
 
-func getProducerQueue(ctx context.Context,awsCfg *config.AWSConfig) *service.Producer{
+func getProducerQueue(ctx context.Context,awsCfg *config.AWSConfig) *queue.Producer{
 	client:=getSqsClient(awsCfg)
 	queueUrl:=getQueueURL(ctx,client,awsCfg)
 	awsCfg.QueueURL=queueUrl
-	prod:=service.NewProducer(client,queueUrl)
+	prod:=queue.NewProducer(client,queueUrl)
 	return prod
 }
 
 
-func userCreate(ctx context.Context, msg *service.MessageConsumer)error{
-	time.Sleep(100*time.Millisecond)
-	slog.Info("user creation is done", "msg",msg.Payload)
-	return nil
-}
 
 
-func userDelete(ctx context.Context, msg *service.MessageConsumer)error{
-	time.Sleep(100*time.Millisecond)
-	slog.Info("user deletion is done", "msg",msg.Payload)
-	return nil
-}
-
-func messageHandler(ctx context.Context, msg *service.MessageConsumer)error{
-	slog.Info("Processing message", "id", msg.ID, "type", msg.Type)
-
-	switch msg.Type{
-	case "user.create":
-		return userCreate(ctx,msg)
-	case "user.delete":
-		return userDelete(ctx,msg)
-	default:
-		slog.Info("Unknown message type" , "type", msg.Type)
-		return nil
-	}
-}
-
-func getConsumerQueue(ctx context.Context, awsCfg *config.AWSConfig) *service.Consumer{
+func getConsumerQueue(ctx context.Context, awsCfg *config.AWSConfig) *queue.Consumer{
 	client:=getSqsClient(awsCfg)
 	queueUrl:=getQueueURL(ctx, client, awsCfg)
-	cons:=service.NewConsumer(client,
-	service.ConsumerConfig{
+	cons:=queue.NewConsumer(client,
+	queue.ConsumerConfig{
 		QueueURL:          queueUrl,
         MaxMessages:       10,
         VisibilityTimeout: 30,
         WaitTimeSeconds:   20,
         WorkerCount:       5,
 	},
-	messageHandler)
+	handlers.MessageHandler)
 	return cons
 }
 

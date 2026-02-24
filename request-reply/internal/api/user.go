@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/serdarozerr/request-reply/internal/service"
+	"github.com/serdarozerr/request-reply/internal/service/queue"
 	"github.com/serdarozerr/request-reply/internal/validators"
 	v "github.com/serdarozerr/request-reply/pkg"
 )
-func users(producer* service.Producer) http.HandlerFunc{
+func users(producer* queue.Producer) http.HandlerFunc{
 	return func (w http.ResponseWriter, r *http.Request) {
 		if r.Body == nil {
 			http.Error(w, "request body is empty", http.StatusBadRequest)
@@ -35,7 +35,7 @@ func users(producer* service.Producer) http.HandlerFunc{
 			})
 			return
 		}
-		producer.SendMessage(r.Context(),&service.Message{
+		producer.SendMessage(r.Context(),&queue.Message{
 			Version:"1",
 			ID:uuid.NewString(),
 			Type:"user.create",

@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/serdarozerr/request-reply/internal/service"
+	"github.com/serdarozerr/request-reply/internal/service/queue"
 	m "github.com/serdarozerr/request-reply/pkg/middleware"
 )
 
@@ -11,13 +11,13 @@ import (
 // 	authMiddleware = m.AuthMiddleware(config.NewConfig())
 // )
 
-func addUserRoutes(mux *http.ServeMux, producer *service.Producer) {
+func addUserRoutes(mux *http.ServeMux, producer *queue.Producer) {
 	mux.HandleFunc("/api/v1/users", m.HttpLogger(users(producer)))
 }
 
 
 
-func NewRouter(producer *service.Producer) http.Handler {
+func NewRouter(producer *queue.Producer) http.Handler {
 	mux := http.NewServeMux()
 	addUserRoutes(mux,producer)
 
