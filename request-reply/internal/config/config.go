@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Mode string `json:"mode"`
 	Port string `json:"port"`
+	Host string `json:"host"`
 }
 
 func NewConfig(path string) *Config {
