@@ -35,20 +35,22 @@ func users(producer* queue.Producer) http.HandlerFunc{
 			})
 			return
 		}
+
+		jobID:=uuid.NewString()
 		producer.SendMessage(r.Context(),&queue.Message{
 			Version:"1",
-			ID:uuid.NewString(),
+			ID:jobID,
 			Type:"user.create",
 			Payload:map[string]any{"name":data.Name,"email":data.Email, "age":data.Age, "password":data.Password},
 			Timestamp:time.Now()}, 
 			20)
 
-		slog.Info("user created", "data", data)
+		slog.Info("send it to queueu", "data", jobID)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "user created successfully",
-			"data":    data,
+			"message": "check status with job id",
+			"job_id":    jobID,
 		})
 	}
 }
