@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -144,9 +145,12 @@ func startConsumerWorker(awsCfg *config.AWSConfig){
 }
 
 func main() {
+	configPath:=flag.String("c","","configuration path")
+	queueConfigPath:=flag.String("qc","","configuration path s3 queue")
+
 	configureLogger()
-	cfg:=config.NewConfig("config.json")
-	awsCfg:=config.NewAwsConfig("aws_cred.json")
+	cfg:=config.NewConfig(*configPath)
+	awsCfg:=config.NewAwsConfig(*queueConfigPath)
 
 	switch cfg.Mode {
 	case "producer":

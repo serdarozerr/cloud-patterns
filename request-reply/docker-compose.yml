@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: req-reply
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  producer:
+    build:
+      context: .
+    command: ["go", "run", "main.go", "-c", "/app/config/producer-config.json", "-qc", "/app/aws_cred.json"]
+    volumes:
+      - ./config/producer-config.json:/app/config/producer-config.json
+      - ./aws_cred.json:/app/aws_cred.json
+    environment:
+      DB_HOST: db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: req-reply
+    depends_on:
+      - db
+
+  consumer:
+    build:
+      context: .
+    command: ["go", "run", "main.go", "-c", "/app/config/consumer-config.json", "-qc", "/app/aws_cred.json"]
+    volumes:
+      - ./config/consumer-config.json:/app/config/consumer-config.json
+      - ./aws_cred.json:/app/aws_cred.json
+    environment:
+      DB_HOST: db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: req-reply
+    depends_on:
+      - db
+
+volumes:
+  db_data:
